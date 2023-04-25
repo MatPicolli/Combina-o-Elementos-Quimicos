@@ -8,43 +8,53 @@ class Elemento:
 
 class Combinacao:
     def __init__(self, *elementos):
-         # Ordena os elementos por valência e, em seguida, por ordem alfabética
+        # Ordena os elementos por valência e, em seguida, por ordem alfabética
         self.elementos = sorted(elementos, key=lambda e: e.valencia, reverse=True)
-        
+
+    def _calcula_prefixos(self, valencia1, valencia2):
+        prefixos = {
+            1: 'mono', 2: 'di', 3: 'tri', 4: 'tetra', 5: 'penta', 6: 'hexa', 7: 'hepta', 8: 'octa', 9: 'nona', 10: 'deca'
+        }
+        return (prefixos[abs(valencia1)], prefixos[abs(valencia2)])
+
     def nome(self):
-        # cria uma lista com os nomes dos elementos da combinação
-        nomes = [elem.nome for elem in self.elementos]
+        # Verifica se algum elemento tem valência 0 e se possui valências específicas
+        valencia_zero = False
+        for elem in self.elementos:
+            if elem.valencia == 0:
+                if not elem.valencias_especificas:
+                    valencia_zero = True
+                else:
+                    for val, simb in elem.valencias_especificas:
+                        if any(e.simbolo == simb for e in self.elementos):
+                            elem.valencia = val
+                            break
 
-        # verifica se há mais de um elemento na combinação
-        if len(self.elementos) > 1:
-            # cria uma lista com as valências dos elementos da combinação
-            valencias = [elem.valencia for elem in self.elementos]
+        if valencia_zero:
+            return "Um ou mais elementos possuem valência 0 e não formam compostos nessa combinação."
 
-            # verifica se a combinação é iônica ou covalente
-            if any(v < 0 for v in valencias) and any(v > 0 for v in valencias):
-                # combinação iônica
-                # encontra os índices do cátion e ânion
-                indice_cation = valencias.index(max(valencias))
-                indice_anion = valencias.index(min(valencias))
+        # Identifica o elemento com menor valência e o com maior valência
+        elem_menor_valencia = min(self.elementos, key=lambda e: abs(e.valencia))
+        elem_maior_valencia = max(self.elementos, key=lambda e: abs(e.valencia))
 
-                # constrói o nome da combinação iônica
-                nome_combinacao = nomes[indice_anion] + 'eto de ' + nomes[indice_cation]
-            else:
-                # combinação covalente
-                prefixos = {
-                -18: 'octadeca', -17: 'heptadeca', -16: 'hexadeca', -15: 'pentadeca', -14: 'tetradeca', -13: 'trideca', -12: 'dodeca', -11: 'undeca',
-                -10: 'deca', -9: 'nona', -8: 'octa', -7: 'hepta', -6: 'hexa', -5: 'penta', -4: 'tetra', -3: 'tri', -2: 'di', -1: 'mono',
-                1: 'mono', 2: 'di', 3: 'tri', 4: 'tetra', 5: 'penta', 6: 'hexa', 7: 'hepta', 8: 'octa', 9: 'nona', 10: 'deca', 11: 'undeca', 12: 'dodeca',
-                13: 'trideca', 14: 'tetradeca', 15: 'pentadeca', 16: 'hexadeca', 17: 'heptadeca', 18: 'octadeca'}
-                prefixos_valencias = [prefixos[abs(v)] for v in valencias]
+        # Troca a ordem dos elementos, se necessário
+        if elem_menor_valencia != self.elementos[0]:
+            self.elementos.reverse()
 
-                nome_combinacao = ''.join([p + n for p, n in zip(prefixos_valencias, nomes)])
+        # Calcula os prefixos dos nomes dos elementos
+        prefixos = self._calcula_prefixos(self.elementos[0].valencia, self.elementos[1].valencia)
 
+        # Monta o nome do composto
+        nome_elem1 = self.elementos[0].nome
+        nome_elem2 = self.elementos[1].nome
+
+        if self.elementos[1].valencia < 0:
+            nome_elem2 = nome_elem2[:-1] + 'eto'
         else:
-            # se houver apenas um elemento, retorna o nome dele
-            nome_combinacao = nomes[0]
+            nome_elem2 = prefixos[1] + nome_elem2
 
-        return nome_combinacao
+        nome_composto = f"{nome_elem1}eto de {nome_elem2}"
+        return nome_composto
 
     def formula(self):
         # Cria uma lista com os símbolos dos elementos da combinação
@@ -53,7 +63,7 @@ class Combinacao:
         # Cria uma lista com as valências dos elementos da combinação
         valencias = [abs(elem.valencia) for elem in self.elementos]
 
-        # Cria a fórmula química combinando os símbolos e valências dos elementos
+         # Cria a fórmula química combinando os símbolos e valências dos elementos
         formula_quimica = ''.join([s + (str(v) if v > 1 else '') for s, v in zip(simbolos, valencias)])
 
         return formula_quimica
@@ -187,20 +197,29 @@ def main():
     # Dicionário para mapear os símbolos aos elementos
     dicionario_elementos = {elem.simbolo: elem for elem in lista_elementos}
 
-    # Pede ao usuário para inserir os símbolos dos elementos
-    simbolo1 = input("Digite o símbolo do primeiro elemento: ").strip()
-    simbolo2 = input("Digite o símbolo do segundo elemento: ").strip()
 
-    # Encontra os elementos correspondentes aos símbolos inseridos
-    try:
-        elem1 = dicionario_elementos[simbolo1]
-        elem2 = dicionario_elementos[simbolo2]
-    except KeyError:
-        print("Um ou ambos os símbolos inseridos não correspondem a um elemento conhecido.")
-        return
+    while True:
+        try:
+            system('cls')
 
-    # Cria a combinação e exibe o nome
-    print(Combinacao(elem1, elem2).nome(), end=' ')
-    print(f'( {Combinacao(elem1, elem2).formula()} )')
+            # Pede ao usuário para inserir os símbolos dos elementos
+            simbolo1 = input("Digite o símbolo do primeiro elemento: ").strip()
+            simbolo2 = input("Digite o símbolo do segundo elemento: ").strip()
+
+            # Encontra os elementos correspondentes aos símbolos inseridos
+            try:
+                elem1 = dicionario_elementos[simbolo1]
+                elem2 = dicionario_elementos[simbolo2]
+            except KeyError:
+                print("Um ou ambos os símbolos inseridos não correspondem a um elemento conhecido.")
+                return
+
+            # Cria a combinação e exibe o nome
+            print('\n', Combinacao(elem1, elem2).nome(), end=' ')
+            print(f'({Combinacao(elem1, elem2).formula()})')
+            input('\nPressione ENTER para continuar . . . ')
+        except:
+            pass
+    
 
 main()
